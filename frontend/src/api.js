@@ -6,7 +6,7 @@ import axios from 'axios';
 // });
 
 const API = axios.create({
-    baseURL: 'https://iron-muscle-backend.onrender.com/api', // <-- Your Render URL here
+   baseURL: 'https://iron-muscle-ai-backend.onrender.com/api', // <-- Your Render URL here
 });
 
 // This is the function we will call to send the photo
