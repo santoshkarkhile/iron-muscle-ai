@@ -1,8 +1,12 @@
 import axios from 'axios';
 
 // This tells React exactly where your backend is running
+// const API = axios.create({
+//     baseURL: 'http://localhost:5000/api', 
+// });
+
 const API = axios.create({
-    baseURL: 'http://localhost:5000/api', 
+    baseURL: 'https://iron-muscle-backend.onrender.com/api', // <-- Your Render URL here
 });
 
 // This is the function we will call to send the photo

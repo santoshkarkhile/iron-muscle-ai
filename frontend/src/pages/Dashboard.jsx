@@ -28,7 +28,7 @@ export default function Dashboard() {
         // We need to map the backend response to our progress state
         setProgress(response.data);
       } catch (err) {
-        console.error("No progress found for today yet.");
+        console.error("No progress found for today yet.",err);
       }
     }
   };
