@@ -6,6 +6,7 @@ const cron = require('node-cron');
 const User = require('./models/User');
 const apiRoutes = require('./routes/apiRoutes');
 const mealRoutes = require('./routes/mealRoutes');
+const workoutRoutes = require('./routes/workoutRoutes');
 const app = express();
 
 // --- MIDDLEWARES ---
@@ -41,6 +42,7 @@ cron.schedule('0 0 * * *', async () => {
 // --- ROUTES ---
 app.use('/api', apiRoutes); // This hooks up your apiRoutes.js file
 app.use('/api',mealRoutes);
+app.use('/api/workouts', workoutRoutes);
 
 app.get('/', (req, res) => {
     res.send('💪 Iron Muscle AI Backend is running!');

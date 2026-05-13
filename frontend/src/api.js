@@ -12,3 +12,4 @@ const API = axios.create({
 // This is the function we will call to send the photo
 export const analyzeMealAPI = (formData) => API.post('/analyze-meal', formData);
 export const getDailyProgressAPI = (userId) => API.get(`/daily-stats/${userId}`);
+export const logWorkoutAPI = (data) => API.post('/workouts', data);

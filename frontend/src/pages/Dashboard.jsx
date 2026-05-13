@@ -1,8 +1,7 @@
-import { useState,useEffect } from 'react';
-import { Upload, Loader2, Utensils, Zap } from 'lucide-react';
-import { analyzeMealAPI, getDailyProgressAPI } from '../api';
+import { useState, useEffect } from 'react';
+import { Upload, Loader2, Utensils, Zap, Dumbbell } from 'lucide-react';
+import { analyzeMealAPI, getDailyProgressAPI, logWorkoutAPI } from '../api';
 import { auth } from '../firebase';
-
 
 export default function Dashboard() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -10,80 +9,77 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [mealData, setMealData] = useState(null);
   const [progress, setProgress] = useState(null);
+  const [workoutStatus, setWorkoutStatus] = useState(null);
+  const [loggingWorkout, setLoggingWorkout] = useState(false);
+
   // Handle when the user picks a photo
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file)); // Creates a temporary URL to show the image
-      setMealData(null); // Clear old results
+      setPreviewUrl(URL.createObjectURL(file)); 
+      setMealData(null); 
     }
   };
 
+  // Fetch daily progress on load
   useEffect(() => {
-  const fetchProgress = async () => {
-    if (auth.currentUser) {
-      try {
-        const response = await getDailyProgressAPI(auth.currentUser.uid);
-        // We need to map the backend response to our progress state
-        setProgress(response.data);
-      } catch (err) {
-        console.error("No progress found for today yet.",err);
+    const fetchProgress = async () => {
+      if (auth.currentUser) {
+        try {
+          const response = await getDailyProgressAPI(auth.currentUser.uid);
+          setProgress(response.data);
+        } catch (err) {
+          console.error("No progress found for today yet.", err);
+        }
       }
+    };
+    fetchProgress();
+  }, []); // <-- useEffect ENDS HERE NOW!
+
+  // --- THIS IS NOW FREE FROM USEEFFECT ---
+  const handleWorkoutCheckIn = async (status) => {
+    if (!auth.currentUser) return;
+    setLoggingWorkout(true);
+    try {
+      await logWorkoutAPI({ 
+        userId: auth.currentUser.uid, 
+        status: status, 
+        workoutType: 'Strength', 
+        durationMinutes: 60 
+      });
+      setWorkoutStatus(status);
+    } catch (error) {
+      console.error("Failed to log workout", error);
+      alert("Failed to save gym check-in.");
+    } finally {
+      setLoggingWorkout(false);
     }
   };
-  fetchProgress();
-}, []);
 
   // Handle sending the photo to the backend
-//   const handleAnalyze = async () => {
-//     if (!selectedFile) return;
-//     const response = await analyzeMealAPI(formData);
-//     setMealData(response.data.meal);
-//     setProgress(response.data.dailyProgress);
-//     setLoading(true);
-//     const formData = new FormData();
-//     formData.append('image', selectedFile);
-//     formData.append('authId', auth.currentUser?.uid);
-
-//     try {
-//       const response = await analyzeMealAPI(formData);
-//       setMealData(response.data.meal);
-//     } catch (error) {
-//       console.error("Error analyzing meal:", error);
-//       alert("Failed to analyze meal. Is your backend running?");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-const handleAnalyze = async () => {
+  const handleAnalyze = async () => {
     if (!selectedFile) return;
 
-    // 1. Prepare the data FIRST
     const formData = new FormData();
     formData.append('image', selectedFile);
     formData.append('authId', auth.currentUser?.uid);
 
-    // 2. Start loading
     setLoading(true);
 
     try {
-      // 3. Make the API call
       const response = await analyzeMealAPI(formData);
-      
-      // 4. Update the UI with results
       setMealData(response.data.meal);
       setProgress(response.data.dailyProgress);
     } catch (error) {
       console.error("Error analyzing meal:", error);
       alert("Failed to analyze meal. Is your backend running?");
     } finally {
-      // 5. Stop loading
       setLoading(false);
     }
   };
 
+  // return ( ... rest of your UI code stays exactly the same ... )
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6 pb-24">
                 {/* User Profile Bar */}
@@ -106,6 +102,43 @@ const handleAnalyze = async () => {
             Logout
         </button>
         </div>
+        {/* --- COMMANDO GYM CHECK-IN --- */}
+        <div className="bg-gray-800 p-4 rounded-2xl border border-gray-700 shadow-xl mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+              <Dumbbell size={16} className="text-blue-500" /> Daily Training
+            </h3>
+            {workoutStatus && (
+              <span className="text-xs text-green-400 font-bold bg-green-900/30 px-2 py-1 rounded">
+                Logged: {workoutStatus}
+              </span>
+            )}
+          </div>
+          
+          {!workoutStatus ? (
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => handleWorkoutCheckIn('Completed')}
+                disabled={loggingWorkout}
+                className="bg-gray-700 hover:bg-blue-600 text-white text-sm font-bold py-2 rounded-lg transition"
+              >
+                {loggingWorkout ? "Saving..." : "Crushed It"}
+              </button>
+              <button 
+                onClick={() => handleWorkoutCheckIn('Rest Day')}
+                disabled={loggingWorkout}
+                className="bg-gray-700 hover:bg-gray-600 text-white text-sm font-bold py-2 rounded-lg transition"
+              >
+                Rest Day
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 italic">
+              Your ADK Coach has recorded your activity. Get your macros in.
+            </p>
+          )}
+        </div>
+        {/* --- END GYM CHECK-IN --- */}
       <div className="max-w-md mx-auto space-y-6">
         
         {/* Header */}
